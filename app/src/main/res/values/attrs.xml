@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="titleText" format="string" />
+    <attr name="titleSize" format="dimension" />
+    <attr name="titleColor" format="color" />
+
+    <declare-styleable name="custom_TitleView">
+        <attr name="titleText" />
+        <attr name="titleSize" />
+        <attr name="titleColor" />
+    </declare-styleable>
+
+    <declare-styleable name="CustomProgressBar">
+        <attr name="cirleWidth" format="dimension" />
+        <attr name="baseProgress" format="float" />
+        <attr name="firstColor" format="color" />
+        <attr name="secondColor" format="color" />
+        <attr name="insideColor" format="color" />
+        <attr name="pauseColor" format="color" />
+        <attr name="pauseIcon" format="reference" />
+        <attr name="pauseIconWidth" format="dimension" />
+        <attr name="pauseIconHeight" format="dimension" />
+        <attr name="insideStokeWidth" format="dimension" />
+        <attr name="animTime" format="integer" />
+        <attr name="blockGap" format="float" />
+    </declare-styleable>
+</resources>

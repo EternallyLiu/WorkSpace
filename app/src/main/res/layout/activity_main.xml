@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#90000000"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <com.example.administrator.myapplication.CustomProgressBar
+        android:id="@+id/progressbar"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        custom:cirleWidth="5dp"
+        custom:firstColor="#fff"
+        custom:secondColor="#cbff009d"
+        custom:insideColor="#fff"
+        custom:insideStokeWidth="20dp"
+        custom:pauseColor="#ff005e"
+        custom:pauseIcon="@drawable/pause"
+        custom:blockGap="1"/>
+
+    <Button
+        android:id="@+id/btn_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="删除"/>
+</LinearLayout>
