@@ -31,7 +31,7 @@ public class CustomProgressBar extends View {
     /**
      * 进度条最大值
      */
-    private float mMaxValue = 100;
+    private float mMaxValue = FULL_PROGRESS;
 
     /**
      * 当前进度值
@@ -121,7 +121,7 @@ public class CustomProgressBar extends View {
     /**
      * 动画的执行时间
      */
-    private final int DEFAULT_ANIMTIME = 230;
+    private final int DEFAULT_ANIMTIME = 200;
 
     private int mAnimTime = DEFAULT_ANIMTIME;
 
@@ -185,6 +185,33 @@ public class CustomProgressBar extends View {
      */
     private boolean isFinish = false;
 
+    /**
+     * 渐变色
+     */
+    private int mGradientColor;
+
+    /**
+     * 是否为首次加载
+     */
+    private boolean isFirstInit = true;
+
+    /**
+     * 中心的坐标值
+     */
+    private int mCenter;
+
+    /**
+     * 圆的半径
+     */
+    private int mRadius;
+    private RectF mOval;
+
+    /**
+     * 内部圆里的图标透明度
+     */
+    private int MAX_ALPHA = 255;
+    private int mInsideBitmapAlpha = MAX_ALPHA;
+
 
     public CustomProgressBar(Context context) {
         this(context, null);
@@ -228,6 +255,7 @@ public class CustomProgressBar extends View {
                     break;
                 case R.styleable.CustomProgressBar_insideColor:
                     mInsideColor = ta.getColor(attr, Color.WHITE);//默认圆环内填充白色
+                    mGradientColor = mInsideColor;
 
                     break;
                 case R.styleable.CustomProgressBar_pauseIcon:
@@ -303,34 +331,29 @@ public class CustomProgressBar extends View {
         //选取宽高最小的作为半径
         setMeasuredDimension(Math.min(measureWidth, measureHeight),
                 Math.min(measureWidth, measureHeight));
+
+        mCenter = this.getWidth() / 2;
+        mRadius = mCenter - mCircleWidth / 2;
+        mOval = new RectF(mCenter - mRadius, mCenter - mRadius,
+                mCenter + mRadius, mCenter + mRadius);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        //中心的坐标值
-        int center = this.getWidth() / 2;
-        //圆的半径
-        int radius = center - mCircleWidth / 2;
-
-        drawCircle(canvas, center, radius);
-        drawInside(canvas, center, radius);
+        drawCircle(canvas);
+        drawInside(canvas);
     }
 
     /**
      * 绘制进度圆弧
      *
      * @param canvas
-     * @param center
-     * @param radius
      */
-    private void drawCircle(Canvas canvas, int center, int radius) {
+    private void drawCircle(Canvas canvas) {
         mCirclePaint.setStyle(Paint.Style.STROKE);
         mCirclePaint.setColor(mFirstColor);
-        canvas.drawCircle(center, center, radius, mCirclePaint);
-
-        RectF oval = new RectF(center - radius, center - radius,
-                center + radius, center + radius);
+        canvas.drawCircle(mCenter, mCenter, mRadius, mCirclePaint);
 
         //每次绘制的起始角度
         float mCurrentAngle = START_ANGLE + mBlockAngle / 2;
@@ -339,17 +362,17 @@ public class CustomProgressBar extends View {
             //每段移动的角度
             float moveAngle = mAngleList.get(i);
             if (mCurrentAngle + moveAngle >= mMaxAngle) {
-                canvas.drawArc(oval, mCurrentAngle, mMaxAngle - mCurrentAngle, false, mCirclePaint);
+                canvas.drawArc(mOval, mCurrentAngle, mMaxAngle - mCurrentAngle, false, mCirclePaint);
                 mCurrentAngle = mMaxAngle;
             } else {
-                canvas.drawArc(oval, mCurrentAngle, moveAngle, false, mCirclePaint);
+                canvas.drawArc(mOval, mCurrentAngle, moveAngle, false, mCirclePaint);
                 mCurrentAngle += moveAngle;
             }
 
             //每段之间的分隔区域
             if (!isFinish || i != mAngleList.size() - 1) {
                 mCirclePaint.setColor(mFirstColor);
-                canvas.drawArc(oval, mCurrentAngle, mBlockAngle, false, mCirclePaint);
+                canvas.drawArc(mOval, mCurrentAngle, mBlockAngle, false, mCirclePaint);
                 mCurrentAngle += mBlockAngle;
             }
         }
@@ -373,20 +396,18 @@ public class CustomProgressBar extends View {
             mNeedMoveAngle += acrossAngle;
         }
 
-        System.out.println("total  == " + (mCurrentAngle + mNeedMoveAngle));
         if ((mCurrentAngle + mNeedMoveAngle) >= mMaxAngle) {
             float finallyNeed = mMaxAngle - mCurrentAngle;
             mCirclePaint.setColor(mPauseColor);
             if (finallyNeed > 0) {
                 isFinish = true;
-                System.out.println("reallytotal  ==  " + (mCurrentAngle + finallyNeed));
-                canvas.drawArc(oval, mCurrentAngle, finallyNeed, false, mCirclePaint);
+                canvas.drawArc(mOval, mCurrentAngle, finallyNeed, false, mCirclePaint);
                 //存储最后一段的绘制轨迹
                 mAngleList.add(finallyNeed);
-                mCurrentValue = mMaxValue;
+                finish();
             }
         } else {
-            canvas.drawArc(oval, mCurrentAngle, mNeedMoveAngle, false, mCirclePaint);
+            canvas.drawArc(mOval, mCurrentAngle, mNeedMoveAngle, false, mCirclePaint);
         }
     }
 
@@ -395,36 +416,41 @@ public class CustomProgressBar extends View {
      * 绘制进度条内部样式
      *
      * @param canvas
-     * @param center
-     * @param radius
      */
-    private void drawInside(final Canvas canvas, final int center, int radius) {
+    private void drawInside(final Canvas canvas) {
+        if (isFirstInit) {
+            //首次加载
+            isPause = true;
+            isContinue = false;
+            mInsidePaint.setStyle(Paint.Style.FILL);
+            mInsidePaint.setColor(mPauseColor);
+            canvas.drawCircle(mCenter, mCenter, getWidth() / 2 - mCircleWidth - mStokeWidth + 1, mInsidePaint);
+            return;
+        }
+
         if (!isPause || isContinue) {
             //执行态
             mInsidePaint.setStyle(Paint.Style.FILL);
-            mInsidePaint.setColor(mInsideColor);
-            if (mPauseLocation == 0) {
-                canvas.drawCircle(center, center, getWidth() / 2 - mCircleWidth + 1, mInsidePaint);
-            } else {
-                canvas.drawCircle(center, center, mStartLocation, mInsidePaint);
-            }
+            mInsidePaint.setColor(mGradientColor);
+            canvas.drawCircle(mCenter, mCenter, mStartLocation, mInsidePaint);
 
-            mBitmapDestRect.left = center - mInsideBitmap.getWidth() / 2;
-            mBitmapDestRect.top = center - mInsideBitmap.getHeight() / 2;
-            mBitmapDestRect.right = center + mInsideBitmap.getWidth() / 2;
-            mBitmapDestRect.bottom = center + mInsideBitmap.getHeight() / 2;
+            mBitmapDestRect.left = mCenter - mInsideBitmap.getWidth() / 2;
+            mBitmapDestRect.top = mCenter - mInsideBitmap.getHeight() / 2;
+            mBitmapDestRect.right = mCenter + mInsideBitmap.getWidth() / 2;
+            mBitmapDestRect.bottom = mCenter + mInsideBitmap.getHeight() / 2;
 
+            mInsidePaint.setAlpha(mInsideBitmapAlpha);
             canvas.drawBitmap(mInsideBitmap, mBitmapSrcRect, mBitmapDestRect, mInsidePaint);
         } else {
             //暂停态
             mInsidePaint.setStyle(Paint.Style.STROKE);
             mInsidePaint.setColor(Color.TRANSPARENT);
             mInsidePaint.setStrokeWidth(mStokeWidth);
-            canvas.drawCircle(center, center, center - mCircleWidth - mStokeWidth / 2, mInsidePaint);
+            canvas.drawCircle(mCenter, mCenter, mCenter - mCircleWidth - mStokeWidth / 2, mInsidePaint);
 
             mInsidePaint.setStyle(Paint.Style.FILL);
-            mInsidePaint.setColor(mPauseColor);
-            canvas.drawCircle(center, center, mPauseLocation, mInsidePaint);
+            mInsidePaint.setColor(mGradientColor);
+            canvas.drawCircle(mCenter, mCenter, mPauseLocation, mInsidePaint);
         }
 
     }
@@ -481,17 +507,15 @@ public class CustomProgressBar extends View {
      * @param progress
      */
     public void setProgress(float progress) {
-        if (isPause) {
-            return;
-        }
 
         float percent = progress * 100 / mMaxValue;
-        if (percent < 0) {
-            percent = 0;
+        if (percent < EMPTY_PROGRESS) {
+            percent = EMPTY_PROGRESS;
         }
-        if (percent > 100) {
-            percent = 100;
+        if (percent > FULL_PROGRESS) {
+            percent = FULL_PROGRESS;
         }
+
         this.mLastProgress = mCurrentValue;
         this.mCurrentValue = percent;
         invalidate();
@@ -526,9 +550,6 @@ public class CustomProgressBar extends View {
             animator.setDuration(100);
             animator.start();
         } else {
-            if (isPause) {
-                return;
-            }
             setProgress(progress);
         }
     }
@@ -550,6 +571,7 @@ public class CustomProgressBar extends View {
             return;
         }
 
+        isFirstInit = false;
         isDelete = false;
         isPause = true;
         isFinish = false;
@@ -558,12 +580,13 @@ public class CustomProgressBar extends View {
         mLastValue = mCurrentValue;
 
         //开启动画平滑过渡
-        ValueAnimator animator = ValueAnimator.ofFloat(
-                (float) (getWidth() / 2), (float) (getWidth() / 2) - (float) mCircleWidth - (float) mStokeWidth);
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                mPauseLocation = (float) animation.getAnimatedValue();
+                mPauseLocation = getWidth() / 2 - (mCircleWidth + mStokeWidth) * (float) animation.getAnimatedValue();
+                mGradientColor = evaluateColor(mFirstColor, mPauseColor, (float) animation.getAnimatedValue());
+                mInsideBitmapAlpha = (int) ((1 - (float) animation.getAnimatedValue()) * MAX_ALPHA);
                 invalidate();
             }
         });
@@ -577,7 +600,9 @@ public class CustomProgressBar extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                progressListener.onPause();
+                if (progressListener != null) {
+                    progressListener.onPause();
+                }
                 mNeedMoveAngle = 0;
             }
         });
@@ -586,23 +611,26 @@ public class CustomProgressBar extends View {
     }
 
     /**
-     * 继续执行
+     * 开始执行
      */
-    public void continueValue() {
+    public void startValue() {
         if (mCurrentValue == mMaxValue) {
             return;
         }
 
+        isFirstInit = false;
         mNeedMoveAngle = 0;
         isDelete = false;
         isFinish = false;
 
         //开启动画平滑过渡
-        ValueAnimator animator = ValueAnimator.ofFloat(mPauseLocation, (float) (getWidth() / 2) - (float) mCircleWidth + 1);
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                mStartLocation = (float) animation.getAnimatedValue();
+                mStartLocation = (float) mStokeWidth * (float) animation.getAnimatedValue() + (getWidth() / 2 - mCircleWidth - mStokeWidth + 1);
+                mGradientColor = evaluateColor(mPauseColor, mFirstColor, (float) animation.getAnimatedValue());
+                mInsideBitmapAlpha = (int) ((float) animation.getAnimatedValue() * MAX_ALPHA);
                 invalidate();
             }
         });
@@ -616,13 +644,32 @@ public class CustomProgressBar extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                progressListener.onContinue();
+                if (progressListener != null) {
+                    progressListener.onContinue();
+                }
                 isPause = false;
                 mNeedMoveAngle = 0;
             }
         });
         animator.setDuration(mAnimTime);
         animator.start();
+    }
+
+    public void finish() {
+        isPause = true;
+        isContinue = false;
+
+        //开启动画平滑过渡
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                mPauseLocation = getWidth() / 2 - (mCircleWidth + mStokeWidth) * (float) animation.getAnimatedValue();
+                mGradientColor = evaluateColor(mFirstColor, mPauseColor, (float) animation.getAnimatedValue());
+                mInsideBitmapAlpha = (int) ((1 - (float) animation.getAnimatedValue()) * MAX_ALPHA);
+                invalidate();
+            }
+        });
     }
 
     /**
@@ -669,6 +716,36 @@ public class CustomProgressBar extends View {
      */
     public float changeAngleToPercent(float angle) {
         return angle * mMaxValue / 360.0f;
+    }
+
+    /**
+     * 实现渐变色
+     *
+     * @param startValue 起始色
+     * @param endValue   结束色
+     * @param fraction   比例
+     * @return
+     */
+    private int evaluateColor(int startValue, int endValue, float fraction) {
+        if (fraction <= 0) {
+            return startValue;
+        }
+        if (fraction >= 1) {
+            return endValue;
+        }
+        int startInt = startValue;
+        int startA = (startInt >> 24) & 0xff;
+        int startR = (startInt >> 16) & 0xff;
+        int startG = (startInt >> 8) & 0xff;
+        int startB = startInt & 0xff;
+
+        int endInt = endValue;
+        int endA = (endInt >> 24) & 0xff;
+        int endR = (endInt >> 16) & 0xff;
+        int endG = (endInt >> 8) & 0xff;
+        int endB = endInt & 0xff;
+
+        return ((startA + (int) (fraction * (endA - startA))) << 24) | ((startR + (int) (fraction * (endR - startR))) << 16) | ((startG + (int) (fraction * (endG - startG))) << 8) | ((startB + (int) (fraction * (endB - startB))));
     }
 
     public CustomProgressListener progressListener;

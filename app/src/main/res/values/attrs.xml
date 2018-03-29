@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <attr name="titleText" format="string" />
-    <attr name="titleSize" format="dimension" />
-    <attr name="titleColor" format="color" />
-
-    <declare-styleable name="custom_TitleView">
-        <attr name="titleText" />
-        <attr name="titleSize" />
-        <attr name="titleColor" />
-    </declare-styleable>
-
     <declare-styleable name="CustomProgressBar">
         <attr name="cirleWidth" format="dimension" />
         <attr name="baseProgress" format="float" />

@@ -9,21 +9,28 @@
 
     <com.example.administrator.myapplication.CustomProgressBar
         android:id="@+id/progressbar"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        custom:cirleWidth="5dp"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        custom:blockGap="1"
+        custom:cirleWidth="3dp"
         custom:firstColor="#fff"
-        custom:secondColor="#cbff009d"
         custom:insideColor="#fff"
-        custom:insideStokeWidth="20dp"
+        custom:insideStokeWidth="10dp"
         custom:pauseColor="#ff005e"
         custom:pauseIcon="@drawable/pause"
-        custom:blockGap="1"/>
+        custom:secondColor="#90ff005e" />
 
     <Button
         android:id="@+id/btn_delete"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="删除"/>
+        android:text="删除" />
+
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="开始" />
 </LinearLayout>
